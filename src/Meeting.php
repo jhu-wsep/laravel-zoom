@@ -4,6 +4,15 @@ namespace MacsiDigital\Zoom;
 
 use MacsiDigital\Zoom\Support\Model;
 
+/**
+ * @property string $schedule_for Email or userId if you want to schedule meeting for another user
+ * @property string $topic Meeting topic
+ * @property int $type Meeting types: 1 - Instant; 2 - Scheduled; 3 - Recurring with no fixed time; 4 - Recurring with fixed time
+ * @property string $start_time Meeting start time
+ * @property int $duration Meeting duration in minutes.
+ * @property string $timezone Time zone to format start_time. For example, “America/Los_Angeles”.
+ * @property string $password. Meeting passcode.
+ */
 class Meeting extends Model
 {
     protected $insertResource = 'MacsiDigital\Zoom\Requests\StoreMeeting';
@@ -85,8 +94,12 @@ class Meeting extends Model
         return $this->newQuery()->addQuery('schedule_for_reminder', $scheduleForReminder)->delete();
     }
 
+    /**
+     * @return bool
+     * @throws \Illuminate\Http\Client\RequestException
+     */
     public function endMeeting()
     {
-        return $this->newQuery()->sendRequest('put', ['meetings/'.$this->id.'/status', ['action' => 'end']])->successful();
+        return $this->newQuery()->sendRequest('put', ['meetings/'.$this->id.'/status', ['action' => 'end']])->throw()->successful();
     }
 }
