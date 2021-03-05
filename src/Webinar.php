@@ -4,6 +4,15 @@ namespace MacsiDigital\Zoom;
 
 use MacsiDigital\Zoom\Support\Model;
 
+/**
+ * @property string $topic
+ * @property int $type 5 - webinar; 6 - recurring webinar with no fixed time; 7 - recurring webinar with fixed time
+ * @property string $start_time
+ * @property int $duration Webinar duration in minutes
+ * @property string $timezone
+ * @property string $password
+ * @property string $agenda
+ */
 class Webinar extends Model
 {
     protected $insertResource = 'MacsiDigital\Zoom\Requests\StoreWebinar';
@@ -75,8 +84,12 @@ class Webinar extends Model
         return $this->hasMany(Poll::class);
     }
 
+    /**
+     * @return bool
+     * @throws \Illuminate\Http\Client\RequestException
+     */
     public function endWebinar()
     {
-        return $this->newQuery()->sendRequest('put', ['webinars/'.$this->id.'/status', ['action' => 'end']])->successful();
+        return $this->newQuery()->sendRequest('put', ['webinars/'.$this->id.'/status', ['action' => 'end']])->throw()->successful();
     }
 }

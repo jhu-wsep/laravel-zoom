@@ -2,11 +2,22 @@
 
 namespace MacsiDigital\Zoom;
 
-use Illuminate\Support\Facades\Validator;
+use Illuminate\Http\Client\Response;
 use MacsiDigital\Zoom\Exceptions\FileTooLargeException;
 use MacsiDigital\Zoom\Exceptions\ValidationException;
 use MacsiDigital\Zoom\Support\Model;
+use Illuminate\Support\Facades\Validator;
 
+/**
+ * @property string $first_name
+ * @property string $last_name
+ * @property int $type
+ * @property int $pmi Personal meeting ID
+ * @property bool $use_pmi Use Personal Meeting ID for instant meetings
+ * @property string $timezone Tiem time zone ID for a user profile. For this parameter value please refer to the ID value im the timezone list
+ * @property string $language
+ * @property string $dept
+ */
 class User extends Model
 {
     protected $insertResource = 'MacsiDigital\Zoom\Requests\StoreUser';
@@ -101,51 +112,90 @@ class User extends Model
         $this->type = '3';
     }
 
+    /**
+     * Update profile picture
+     * @param string $image Path to image
+     * @return bool
+     * @throws FileTooLargeException
+     * @throws \Illuminate\Http\Client\RequestException
+     */
     public function updateProfilePicture($image)
     {
         $filesize = number_format(filesize($image) / 1048576, 2);
         if ($filesize > 2) {
             throw new FileTooLargeException($image, $filesize, '2MB');
         } else {
-            return $this->newQuery()->attachFile('pic_file', file_get_contents($image), $image)->sendRequest('post', ['users/'.$this->id.'/picture'])->successful();
+            $this->newQuery()->attachFile('pic_file', file_get_contents($image), $image)->sendRequest('post', ['users/'.$this->id.'/picture'])->throw()->successful();
         }
     }
 
+    /**
+     * Update status
+     * @param string $status
+     * @return bool
+     * @throws ValidationException
+     * @throws \Illuminate\Http\Client\RequestException
+     */
     public function updateStatus($status)
     {
         if (in_array($status, ['activate', 'deactivate'])) {
-            return $this->newQuery()->sendRequest('put', ['users/'.$this->id.'/status', ['action' => $status]])->successful();
+            return $this->newQuery()->sendRequest('put', ['users/'.$this->id.'/status', ['action' => $status]])->throw()->successful();
         } else {
             throw new ValidationException('Status must be either active or deactivate');
         }
     }
 
+    /**
+     * Update password
+     * @param string $password
+     * @return bool
+     * @throws ValidationException
+     * @throws \Illuminate\Http\Client\RequestException
+     */
     public function updatePassword($password)
     {
         if (strlen($password) >= 8) {
-            return $this->newQuery()->sendRequest('put', ['users/'.$this->id.'/password', ['password' => $password]])->successful();
+            return $this->newQuery()->sendRequest('put', ['users/'.$this->id.'/password', ['password' => $password]])->throw()->successful();
         } else {
             throw new ValidationException('Password must be at least 8 characters');
         }
     }
 
+    /**
+     * Update email
+     * @param string $email
+     * @return bool
+     * @throws ValidationException
+     * @throws \Illuminate\Http\Client\RequestException
+     */
     public function updateEmail($email)
     {
         $validator = Validator::make(['email' => $email], [ 'email' => 'required|email|max:128' ]);
         if ($validator->fails()) {
             throw new ValidationException('Email must be a valid email address less than 128 characters');
         } else {
-            return $this->newQuery()->sendRequest('put', ['users/'.$this->id.'/email', ['email' => $email]])->successful();
+            return $this->newQuery()->sendRequest('put', ['users/'.$this->id.'/email', ['email' => $email]])->throw()->successful();
         }
     }
 
+    /**
+     * Unlinking a user from an account allows them to maintain their own Zoom account with existing settings,
+     * meetings, webinars, and Cloud recordings.
+     * @return bool
+     * @throws \Illuminate\Http\Client\RequestException
+     */
     public function disassociate()
     {
-        return $this->newQuery()->sendRequest('delete', ['users/'.$this->id, ['action' => 'disassociate']])->successful();
+        return $this->newQuery()->sendRequest('delete', ['users/'.$this->id, ['action' => 'disassociate']])->throw()->successful();
     }
 
+    /**
+     * Delete user
+     * @return bool
+     * @throws \Illuminate\Http\Client\RequestException
+     */
     public function delete()
     {
-        return $this->newQuery()->sendRequest('delete', ['users/'.$this->id, ['action' => 'delete']])->successful();
+        return $this->newQuery()->sendRequest('delete', ['users/'.$this->id, ['action' => 'delete']])->throw()->successful();
     }
 }
