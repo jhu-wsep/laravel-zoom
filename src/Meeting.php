@@ -12,6 +12,8 @@ use MacsiDigital\Zoom\Support\Model;
  * @property int $duration Meeting duration in minutes.
  * @property string $timezone Time zone to format start_time. For example, “America/Los_Angeles”.
  * @property string $password. Meeting passcode.
+ * @property MeetingSetting $settings. The meeting settings
+ * @method Meeting find($meetingId)
  */
 class Meeting extends Model
 {
